@@ -38,29 +38,6 @@ export default function Upload() {
     const [processing, setProcessing] = useState(false)
     const [extractedData, setExtractedData] = useState(null)
 
-    const handleUpload = async (info) => {
-        const { status, name, response } = info.file
-
-        if (status === 'uploading') {
-            setProcessing(true)
-        }
-
-        if (status === 'done') {
-            setProcessing(false)
-            message.success(`${name} uploaded and processed successfully`)
-            setUploadedFiles(prev => [...prev, {
-                name,
-                status: 'processed',
-                ...response
-            }])
-            setCurrentStep(1)
-            setExtractedData(response?.extracted_data || mockExtractedData)
-        } else if (status === 'error') {
-            setProcessing(false)
-            message.error(`${name} upload failed.`)
-        }
-    }
-
     // Mock extracted data for demonstration
     const mockExtractedData = {
         income_statement: {
@@ -79,14 +56,72 @@ export default function Upload() {
         }
     }
 
+    // Custom upload handler - simulates upload with mock data for demo
+    const customUpload = async ({ file, onSuccess, onError }) => {
+        setProcessing(true)
+
+        // Simulate processing delay
+        await new Promise(resolve => setTimeout(resolve, 1500))
+
+        try {
+            // Try to upload to actual backend first
+            const formData = new FormData()
+            formData.append('file', file)
+
+            const response = await fetch('/api/upload/document', {
+                method: 'POST',
+                body: formData
+            })
+
+            if (response.ok) {
+                const data = await response.json()
+                onSuccess(data)
+                return
+            }
+            throw new Error('Backend not available')
+        } catch (error) {
+            // Fallback to mock data for demo mode
+            console.log('Using demo mode with mock data')
+            onSuccess({
+                extracted_data: mockExtractedData,
+                demo_mode: true
+            })
+        }
+    }
+
+    const handleUpload = async (info) => {
+        const { status, name, response } = info.file
+
+        if (status === 'done') {
+            setProcessing(false)
+            const isDemoMode = response?.demo_mode
+            message.success(
+                isDemoMode
+                    ? `${name} processed in demo mode with sample data`
+                    : `${name} uploaded and processed successfully`
+            )
+            setUploadedFiles(prev => [...prev, {
+                name,
+                status: 'processed',
+                demoMode: isDemoMode
+            }])
+            setCurrentStep(1)
+            setExtractedData(response?.extracted_data || mockExtractedData)
+        } else if (status === 'error') {
+            setProcessing(false)
+            message.error(`${name} upload failed.`)
+        }
+    }
+
     const uploadProps = {
         name: 'file',
         multiple: true,
-        action: '/api/upload/document',
+        customRequest: customUpload,
         accept: '.csv,.xlsx,.xls,.pdf',
         onChange: handleUpload,
         showUploadList: false,
     }
+
 
     const extractedColumns = [
         { title: 'Item', dataIndex: 'item', key: 'item' },
