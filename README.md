@@ -1,4 +1,4 @@
-# Financial Health Assessment Platform
+# Financial Health Assessment Tool
 
 AI-powered financial health assessment platform for Small and Medium Enterprises (SMEs).
 
