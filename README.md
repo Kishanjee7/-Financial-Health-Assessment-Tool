@@ -168,6 +168,4 @@ Once the backend is running, access:
 - Role-based access control (Admin, Analyst, User)
 - Audit logging
 
-## License
 
-MIT License
